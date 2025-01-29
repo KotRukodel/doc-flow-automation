@@ -1,0 +1,159 @@
+{
+  "name": "Sample_Docs_Review_Flow",
+  "nodes": [
+    {
+      "parameters": {
+        "authentication": "githubApi",
+        "owner": "{{$node.Webhook.json.repository.owner.name}}",
+        "repository": "{{$node.Webhook.json.repository.name}}",
+        "events": [
+          "push"
+        ],
+        "options": {}
+      },
+      "id": "0bebb6f5-18ad-4c8f-a97d-a74386130597",
+      "name": "Github Trigger",
+      "type": "n8n-nodes-base.githubTrigger",
+      "typeVersion": 1,
+      "position": [
+        460,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.openai.com/v1/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer {{$node.Globals.json.OPENAI_API_KEY}}"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4"
+            },
+            {
+              "name": "prompt",
+              "value": "Review technical accuracy of:\\n{{$node.Github Trigger.json.commits[0].message}}"
+            },
+            {
+              "name": "max_tokens",
+              "value": "500"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "454de3c2-ff1e-4152-a23e-4cbf7251167a",
+      "name": "OpenAI Review",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        660,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{$node.OpenAI Review.json.choices[0].text.includes('PASS')}}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "02489c2b-249a-462c-8c12-28cb35b9d642",
+      "name": "Review Decision",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        860,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "githubApi",
+        "owner": "={{$node.Github Trigger.json.repository.owner.name}}",
+        "repository": "={{$node.Github Trigger.json.repository.name}}",
+        "title": "Documentation Update Approved",
+        "body": "={{$node.OpenAI Review.json.choices[0].text}}",
+        "labels": [
+          "approved"
+        ],
+        "assignees": []
+      },
+      "id": "0618801f-396f-4c05-ab7a-f1a587571c2f",
+      "name": "Create Issue",
+      "type": "n8n-nodes-base.github",
+      "typeVersion": 1,
+      "position": [
+        1100,
+        460
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Github Trigger": {
+      "main": [
+        [
+          {
+            "node": "OpenAI Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Review": {
+      "main": [
+        [
+          {
+            "node": "Review Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Review Decision": {
+      "main": [
+        [
+          {
+            "node": "Create Issue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "53e2f1d5-5094-470a-ab53-7ba175a0278f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c75488aa5c22423e2b803439c41b83743b3098c7a005ecb26182706e9c83e428"
+  },
+  "id": "HKRzmbTVMUwTYvbe",
+  "tags": []
+}

@@ -1,0 +1,37 @@
+flowchart TD
+    subgraph Input
+        A[Source Code] --> B[Existing Docs]
+        C[User Feedback] --> B
+    end
+
+    subgraph LangChain Processing
+        D[Document Loader] --> E[Text Splitter]
+        E --> F[Vector Store]
+        F --> G[Content Generator]
+    end
+
+    subgraph n8n Workflow
+        H[Git Webhook] --> I[Quality Check]
+        I --> J[AI Review]
+        J --> K{Review Pass?}
+        K -->|Yes| L[Update Docs]
+        K -->|No| M[Return for Edits]
+        M --> I
+    end
+
+    subgraph Output
+        N[Published Docs]
+        O[Interactive Guides]
+        P[API Reference]
+    end
+
+    B --> D
+    G --> H
+    L --> N
+    L --> O
+    L --> P
+    
+    style Input fill:#e1f5fe
+    style LangChain Processing fill:#fff3e0
+    style n8n Workflow fill:#f3e5f5
+    style Output fill:#e8f5e9
